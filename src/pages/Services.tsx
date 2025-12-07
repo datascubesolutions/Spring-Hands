@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPaintBrush, FaHandSparkles, FaRing, FaStar, FaCheck, FaImage, FaChevronLeft, FaChevronRight, FaTimes } from 'react-icons/fa';
 import Header from '../components/Header/Header';
@@ -8,11 +8,63 @@ const Services: React.FC = () => {
     const [nailGalleryIndex, setNailGalleryIndex] = useState(0);
     const [mehndiGalleryIndex, setMehndiGalleryIndex] = useState(0);
     const [selectedImage, setSelectedImage] = useState<{ imageNumber: number; galleryType: 'nail' | 'mehndi' } | null>(null);
+    const [imagesPerView, setImagesPerView] = useState(4);
+    const [isMobile, setIsMobile] = useState(false);
+    const nailGalleryScrollRef = useRef<HTMLDivElement>(null);
+    const mehndiGalleryScrollRef = useRef<HTMLDivElement>(null);
 
     // Image galleries (can add more images here)
     const nailGalleryImages = [1, 2, 3, 4, 5, 6, 7, 8]; // 8 images
     const mehndiGalleryImages = [1, 2, 3, 4, 5, 6, 7, 8]; // 8 images
-    const imagesPerView = 4;
+
+    // Update imagesPerView based on screen size
+    useEffect(() => {
+        const updateImagesPerView = () => {
+            if (window.innerWidth < 768) {
+                setImagesPerView(2); // Mobile: 2 columns
+                setIsMobile(true);
+            } else {
+                setImagesPerView(4); // Desktop: 4 columns
+                setIsMobile(false);
+            }
+        };
+
+        updateImagesPerView();
+        window.addEventListener('resize', updateImagesPerView);
+        return () => window.removeEventListener('resize', updateImagesPerView);
+    }, []);
+
+    // Update nail gallery index based on scroll position on mobile
+    useEffect(() => {
+        if (!isMobile || !nailGalleryScrollRef.current) return;
+
+        const container = nailGalleryScrollRef.current;
+        const handleScroll = () => {
+            const scrollLeft = container.scrollLeft;
+            const cardWidth = container.clientWidth;
+            const currentIndex = Math.round(scrollLeft / cardWidth);
+            setNailGalleryIndex(currentIndex);
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [isMobile]);
+
+    // Update mehndi gallery index based on scroll position on mobile
+    useEffect(() => {
+        if (!isMobile || !mehndiGalleryScrollRef.current) return;
+
+        const container = mehndiGalleryScrollRef.current;
+        const handleScroll = () => {
+            const scrollLeft = container.scrollLeft;
+            const cardWidth = container.clientWidth;
+            const currentIndex = Math.round(scrollLeft / cardWidth);
+            setMehndiGalleryIndex(currentIndex);
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [isMobile]);
 
     const nextNailGallery = () => {
         if (nailGalleryIndex < nailGalleryImages.length - imagesPerView) {
@@ -201,45 +253,51 @@ const Services: React.FC = () => {
                         className="mb-12 relative"
                     >
                         <div className="relative">
-                            {/* Previous Button */}
+                            {/* Previous Button - Hidden on mobile */}
                             <button
                                 onClick={prevNailGallery}
                                 disabled={nailGalleryIndex === 0}
-                                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all ${nailGalleryIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
+                                className={`hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all border-2 border-purple-200 items-center justify-center ${nailGalleryIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 active:scale-95'
                                     }`}
+                                aria-label="Previous images"
                             >
                                 <FaChevronLeft className="text-purple-600 text-xl" />
                             </button>
 
-                            {/* Image Grid */}
-                            <div className="overflow-hidden">
+                            {/* Image Grid - Scrollable on mobile, carousel on desktop */}
+                            <div 
+                                ref={nailGalleryScrollRef}
+                                className="overflow-x-auto md:overflow-hidden md:px-0 scrollbar-hide snap-x snap-mandatory"
+                            >
                                 <div
-                                    className="grid grid-cols-2 md:grid-cols-4 gap-4 transition-transform duration-500"
-                                    style={{ transform: `translateX(-${nailGalleryIndex * (100 / imagesPerView)}%)` }}
+                                    className="flex md:grid md:grid-cols-4 gap-4 px-4 md:px-0 transition-transform duration-500"
+                                    style={{ 
+                                        transform: !isMobile ? `translateX(-${nailGalleryIndex * (100 / imagesPerView)}%)` : 'none'
+                                    }}
                                 >
                                     {nailGalleryImages.map((item) => (
-                                        <motion.div
+                                        <div
                                             key={item}
-                                            whileHover={{ scale: 1.05 }}
                                             onClick={() => openImageModal(item, 'nail')}
-                                            className="relative aspect-square rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-purple-100 to-fuchsia-100 flex items-center justify-center group cursor-pointer"
+                                            className="relative aspect-square w-full min-w-full md:min-w-0 md:w-auto rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-purple-100 to-fuchsia-100 flex items-center justify-center group cursor-pointer snap-center"
                                         >
                                             <FaImage className="text-6xl text-purple-300 group-hover:text-purple-400 transition-colors" />
                                             <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
                                             <div className="absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-xs font-semibold text-purple-600">
                                                 {item}
                                             </div>
-                                        </motion.div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Next Button */}
+                            {/* Next Button - Hidden on mobile */}
                             <button
                                 onClick={nextNailGallery}
                                 disabled={nailGalleryIndex >= nailGalleryImages.length - imagesPerView}
-                                className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all ${nailGalleryIndex >= nailGalleryImages.length - imagesPerView ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:bg-purple-50'
+                                className={`hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all border-2 border-purple-200 items-center justify-center ${nailGalleryIndex >= nailGalleryImages.length - imagesPerView ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:bg-purple-50 active:scale-95'
                                     }`}
+                                aria-label="Next images"
                             >
                                 <FaChevronRight className="text-purple-600 text-xl" />
                             </button>
@@ -247,10 +305,19 @@ const Services: React.FC = () => {
 
                         {/* Indicator Dots */}
                         <div className="flex justify-center gap-2 mt-6">
-                            {Array.from({ length: nailGalleryImages.length - imagesPerView + 1 }).map((_, index) => (
+                            {Array.from({ length: isMobile ? nailGalleryImages.length : nailGalleryImages.length - imagesPerView + 1 }).map((_, index) => (
                                 <button
                                     key={index}
-                                    onClick={() => setNailGalleryIndex(index)}
+                                    onClick={() => {
+                                        setNailGalleryIndex(index);
+                                        if (isMobile && nailGalleryScrollRef.current) {
+                                            const cardWidth = nailGalleryScrollRef.current.clientWidth;
+                                            nailGalleryScrollRef.current.scrollTo({
+                                                left: index * cardWidth,
+                                                behavior: 'smooth'
+                                            });
+                                        }
+                                    }}
                                     className={`w-2 h-2 rounded-full transition-all ${index === nailGalleryIndex ? 'bg-purple-600 w-8' : 'bg-gray-300'
                                         }`}
                                 />
@@ -317,45 +384,51 @@ const Services: React.FC = () => {
                         className="mb-12 relative"
                     >
                         <div className="relative">
-                            {/* Previous Button */}
+                            {/* Previous Button - Hidden on mobile */}
                             <button
                                 onClick={prevMehndiGallery}
                                 disabled={mehndiGalleryIndex === 0}
-                                className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all ${mehndiGalleryIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-fuchsia-50'
+                                className={`hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all border-2 border-fuchsia-200 items-center justify-center ${mehndiGalleryIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-fuchsia-50 active:scale-95'
                                     }`}
+                                aria-label="Previous images"
                             >
                                 <FaChevronLeft className="text-fuchsia-600 text-xl" />
                             </button>
 
-                            {/* Image Grid */}
-                            <div className="overflow-hidden">
+                            {/* Image Grid - Scrollable on mobile, carousel on desktop */}
+                            <div 
+                                ref={mehndiGalleryScrollRef}
+                                className="overflow-x-auto md:overflow-hidden md:px-0 scrollbar-hide snap-x snap-mandatory"
+                            >
                                 <div
-                                    className="grid grid-cols-2 md:grid-cols-4 gap-4 transition-transform duration-500"
-                                    style={{ transform: `translateX(-${mehndiGalleryIndex * (100 / imagesPerView)}%)` }}
+                                    className="flex md:grid md:grid-cols-4 gap-4 px-4 md:px-0 transition-transform duration-500"
+                                    style={{ 
+                                        transform: !isMobile ? `translateX(-${mehndiGalleryIndex * (100 / imagesPerView)}%)` : 'none'
+                                    }}
                                 >
                                     {mehndiGalleryImages.map((item) => (
-                                        <motion.div
+                                        <div
                                             key={item}
-                                            whileHover={{ scale: 1.05 }}
                                             onClick={() => openImageModal(item, 'mehndi')}
-                                            className="relative aspect-square rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-fuchsia-100 to-purple-100 flex items-center justify-center group cursor-pointer"
+                                            className="relative aspect-square w-full min-w-full md:min-w-0 md:w-auto rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-fuchsia-100 to-purple-100 flex items-center justify-center group cursor-pointer snap-center"
                                         >
                                             <FaImage className="text-6xl text-fuchsia-300 group-hover:text-fuchsia-400 transition-colors" />
                                             <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-10 transition-opacity"></div>
                                             <div className="absolute bottom-2 right-2 bg-white/80 px-2 py-1 rounded text-xs font-semibold text-fuchsia-600">
                                                 {item}
                                             </div>
-                                        </motion.div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Next Button */}
+                            {/* Next Button - Hidden on mobile */}
                             <button
                                 onClick={nextMehndiGallery}
                                 disabled={mehndiGalleryIndex >= mehndiGalleryImages.length - imagesPerView}
-                                className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all ${mehndiGalleryIndex >= mehndiGalleryImages.length - imagesPerView ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:bg-fuchsia-50'
+                                className={`hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 bg-white rounded-full p-3 shadow-xl hover:shadow-2xl transition-all border-2 border-fuchsia-200 items-center justify-center ${mehndiGalleryIndex >= mehndiGalleryImages.length - imagesPerView ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'hover:bg-fuchsia-50 active:scale-95'
                                     }`}
+                                aria-label="Next images"
                             >
                                 <FaChevronRight className="text-fuchsia-600 text-xl" />
                             </button>
@@ -363,10 +436,19 @@ const Services: React.FC = () => {
 
                         {/* Indicator Dots */}
                         <div className="flex justify-center gap-2 mt-6">
-                            {Array.from({ length: mehndiGalleryImages.length - imagesPerView + 1 }).map((_, index) => (
+                            {Array.from({ length: isMobile ? mehndiGalleryImages.length : mehndiGalleryImages.length - imagesPerView + 1 }).map((_, index) => (
                                 <button
                                     key={index}
-                                    onClick={() => setMehndiGalleryIndex(index)}
+                                    onClick={() => {
+                                        setMehndiGalleryIndex(index);
+                                        if (isMobile && mehndiGalleryScrollRef.current) {
+                                            const cardWidth = mehndiGalleryScrollRef.current.clientWidth;
+                                            mehndiGalleryScrollRef.current.scrollTo({
+                                                left: index * cardWidth,
+                                                behavior: 'smooth'
+                                            });
+                                        }
+                                    }}
                                     className={`w-2 h-2 rounded-full transition-all ${index === mehndiGalleryIndex ? 'bg-fuchsia-600 w-8' : 'bg-gray-300'
                                         }`}
                                 />

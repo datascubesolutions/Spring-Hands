@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaFacebook, FaInstagram, FaWhatsapp, FaEnvelope, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
-import logo from '../../assets/images/spring hands - logo.jpg';
+import logo from '../../assets/images/spring hands - logo.png';
 
 const Footer: React.FC = () => {
   return (
@@ -11,11 +11,13 @@ const Footer: React.FC = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3 mb-4">
-              <img
-                src={logo}
-                alt="Spring Hands Logo"
-                className="h-12 w-12 rounded-full object-cover border-2 border-purple-300"
-              />
+              <div className="h-12 w-12 rounded-full border-2 border-purple-300 overflow-hidden flex items-center justify-center bg-white">
+                <img
+                  src={logo}
+                  alt="Spring Hands Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
               <div>
                 <h3 className="text-xl font-bold">Spring Hands</h3>
                 <p className="text-sm text-gray-400">Nail Art & Mehndi Studio</p>

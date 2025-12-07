@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { FaBars, FaTimes } from 'react-icons/fa';
-import logo from '../../assets/images/spring hands - logo.jpg';
+import logo from '../../assets/images/spring hands - logo.png';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -23,17 +23,19 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3">
-            <img
-              src={logo}
-              alt="Spring Hands Logo"
-              className="h-12 w-12 md:h-16 md:w-16 rounded-full object-cover border-2 border-rose-400 shadow-md"
-            />
-            <div className="hidden sm:block">
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+          <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
+            <div className="h-12 w-12 md:h-16 md:w-16 rounded-full border-2 border-rose-400 shadow-md overflow-hidden flex items-center justify-center bg-white p-1">
+              <img
+                src={logo}
+                alt="Spring Hands Logo"
+                className="w-full h-full object-contain scale-125"
+              />
+            </div>
+            <div>
+              <h1 className="text-base sm:text-xl md:text-2xl font-bold text-gray-800">
                 Spring Hands
               </h1>
-              <p className="text-xs md:text-sm text-gray-600">
+              <p className="text-xs sm:text-xs md:text-sm text-gray-600">
                 Nail Art & Mehndi Studio
               </p>
             </div>
@@ -91,4 +93,5 @@ const Header: React.FC = () => {
 };
 
 export default Header;
+
 

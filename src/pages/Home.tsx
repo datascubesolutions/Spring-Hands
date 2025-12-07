@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaPaintBrush, FaHandSparkles, FaStar, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
@@ -7,6 +7,8 @@ import Footer from '../components/Footer/Footer';
 
 const Home: React.FC = () => {
   const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const services = [
     {
@@ -60,6 +62,33 @@ const Home: React.FC = () => {
   ];
 
   const testimonialsPerView = 3;
+
+  // Update isMobile based on screen size
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    updateIsMobile();
+    window.addEventListener('resize', updateIsMobile);
+    return () => window.removeEventListener('resize', updateIsMobile);
+  }, []);
+
+  // Update testimonial index based on scroll position on mobile
+  useEffect(() => {
+    if (!isMobile || !scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const handleScroll = () => {
+      const scrollLeft = container.scrollLeft;
+      const cardWidth = container.clientWidth;
+      const currentIndex = Math.round(scrollLeft / cardWidth);
+      setTestimonialIndex(currentIndex);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isMobile]);
 
   const nextTestimonial = () => {
     if (testimonialIndex < testimonials.length - testimonialsPerView) {
@@ -208,30 +237,31 @@ const Home: React.FC = () => {
 
         {/* Testimonials Carousel */}
         <div className="relative">
-          {/* Previous Button */}
+          {/* Previous Button - Hidden on mobile */}
           <button
             onClick={prevTestimonial}
             disabled={testimonialIndex === 0}
-            className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all ${testimonialIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
+            className={`hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all items-center justify-center ${testimonialIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
               }`}
           >
             <FaChevronLeft className="text-purple-600 text-xl" />
           </button>
 
-          {/* Testimonials Grid */}
-          <div className="overflow-hidden">
+          {/* Testimonials Grid - Scrollable on mobile, carousel on desktop */}
+          <div 
+            ref={scrollContainerRef}
+            className="overflow-x-auto md:overflow-hidden scrollbar-hide snap-x snap-mandatory"
+          >
             <div
-              className="grid grid-cols-1 md:grid-cols-3 gap-8 transition-transform duration-500"
-              style={{ transform: `translateX(-${testimonialIndex * (100 / testimonialsPerView)}%)` }}
+              className="flex md:grid md:grid-cols-3 gap-8 px-4 md:px-0 transition-transform duration-500"
+              style={{ 
+                transform: !isMobile ? `translateX(-${testimonialIndex * (100 / testimonialsPerView)}%)` : 'none'
+              }}
             >
               {testimonials.map((testimonial, index) => (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.2 }}
-                  viewport={{ once: true }}
-                  className="bg-gradient-to-br from-gray-50 to-slate-100 rounded-2xl p-8 shadow-lg min-w-full md:min-w-0"
+                  className="bg-gradient-to-br from-gray-50 to-slate-100 rounded-2xl p-8 shadow-lg w-full min-w-full md:min-w-0 snap-center"
                 >
                   <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
@@ -240,16 +270,16 @@ const Home: React.FC = () => {
                   </div>
                   <p className="text-gray-700 mb-4 italic">"{testimonial.text}"</p>
                   <p className="font-bold text-purple-600">- {testimonial.name}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
 
-          {/* Next Button */}
+          {/* Next Button - Hidden on mobile */}
           <button
             onClick={nextTestimonial}
             disabled={testimonialIndex >= testimonials.length - testimonialsPerView}
-            className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all ${testimonialIndex >= testimonials.length - testimonialsPerView ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
+            className={`hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 bg-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all items-center justify-center ${testimonialIndex >= testimonials.length - testimonialsPerView ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50'
               }`}
           >
             <FaChevronRight className="text-purple-600 text-xl" />
@@ -258,10 +288,19 @@ const Home: React.FC = () => {
 
         {/* Indicator Dots */}
         <div className="flex justify-center gap-2 mt-8">
-          {Array.from({ length: testimonials.length - testimonialsPerView + 1 }).map((_, index) => (
+          {Array.from({ length: isMobile ? testimonials.length : testimonials.length - testimonialsPerView + 1 }).map((_, index) => (
             <button
               key={index}
-              onClick={() => setTestimonialIndex(index)}
+              onClick={() => {
+                setTestimonialIndex(index);
+                if (isMobile && scrollContainerRef.current) {
+                  const cardWidth = scrollContainerRef.current.clientWidth;
+                  scrollContainerRef.current.scrollTo({
+                    left: index * cardWidth,
+                    behavior: 'smooth'
+                  });
+                }
+              }}
               className={`w-2 h-2 rounded-full transition-all ${index === testimonialIndex ? 'bg-purple-600 w-8' : 'bg-gray-300'
                 }`}
             />
